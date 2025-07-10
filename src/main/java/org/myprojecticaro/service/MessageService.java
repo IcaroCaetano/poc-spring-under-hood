@@ -1,6 +1,7 @@
 package org.myprojecticaro.service;
 
 
+import org.myprojecticaro.annotations.AutoConfiguration;
 import org.myprojecticaro.annotations.Component;
 
 /**
@@ -11,6 +12,7 @@ import org.myprojecticaro.annotations.Component;
  * and used independently or injected into another bean.
  * </p>
  */
+@AutoConfiguration
 @Component
 public class MessageService {
 

@@ -1,0 +1,2 @@
+org.myprojecticaro.autoconfigure.EnableAutoConfiguration=\
+org.myprojecticaro.service.MessageService
