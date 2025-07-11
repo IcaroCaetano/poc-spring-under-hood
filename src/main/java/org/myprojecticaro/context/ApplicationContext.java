@@ -9,9 +9,34 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 
+/**
+ * {@code ApplicationContext} is a lightweight inversion-of-control container that mimics
+ * the core behavior of the Spring Framework.
+ * <p>
+ * It supports:
+ * <ul>
+ *   <li>Component scanning via reflection</li>
+ *   <li>Auto-configuration using a custom .factories file</li>
+ *   <li>Field-based dependency injection via {@code @Autowired}</li>
+ * </ul>
+ * All discovered and instantiated beans are stored as singletons in a simple map.
+ * </p>
+ */
 public class ApplicationContext {
+
     private final Map<Class<?>, Object> beans = new HashMap<>();
 
+    /**
+     * Initializes the application context:
+     * <ol>
+     *   <li>Scans the specified base package for {@code @Component}-annotated classes</li>
+     *   <li>Loads additional beans via custom auto-configuration</li>
+     *   <li>Injects dependencies annotated with {@code @Autowired}</li>
+     * </ol>
+     *
+     * @param basePackage the package to scan for component classes
+     * @throws RuntimeException if the initialization fails
+     */
     public ApplicationContext(String basePackage) {
         try {
             scanPackage(basePackage);
@@ -22,6 +47,13 @@ public class ApplicationContext {
         }
     }
 
+    /**
+     * Scans the specified package for classes annotated with {@code @Component},
+     * instantiates them via reflection, and registers them in the IoC container.
+     *
+     * @param basePackage the base package to scan
+     * @throws Exception if any class loading or instantiation fails
+     */
     private void scanPackage(String basePackage) throws Exception {
         String path = basePackage.replace(".", "/");
         URL resource = Thread.currentThread().getContextClassLoader().getResource(path);
@@ -44,7 +76,12 @@ public class ApplicationContext {
         }
     }
 
-
+    /**
+     * Loads bean classes from the {@code autoconfiguration.factories} file
+     * and registers them in the container if they are annotated with {@code @Component}.
+     *
+     * @throws Exception if any class loading or instantiation fails
+     */
     private void loadAutoConfigurations() throws Exception {
         URL resource = Thread.currentThread()
                 .getContextClassLoader()
@@ -76,6 +113,12 @@ public class ApplicationContext {
         }
     }
 
+    /**
+     * Performs field-based dependency injection for all beans
+     * by setting fields annotated with {@code @Autowired}.
+     *
+     * @throws IllegalAccessException if a field cannot be set
+     */
     private void injectDependencies() throws IllegalAccessException {
         for (Object bean : beans.values()) {
             for (var field : bean.getClass().getDeclaredFields()) {
