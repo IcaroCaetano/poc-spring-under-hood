@@ -3,11 +3,14 @@ package org.myprojecticaro.context;
 
 import org.myprojecticaro.annotations.Autowired;
 import org.myprojecticaro.annotations.Component;
+import org.myprojecticaro.events.EventPublisher;
+import org.myprojecticaro.events.EventListener;
 
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
+
 
 /**
  * {@code ApplicationContext} is a lightweight inversion-of-control container that mimics
@@ -42,6 +45,19 @@ public class ApplicationContext {
             scanPackage(basePackage);
             loadAutoConfigurations();
             injectDependencies();
+
+            EventPublisher publisher = (EventPublisher) beans.get(EventPublisher.class);
+            if (publisher == null) {
+                throw new RuntimeException("EventPublisher not found in context.");
+            }
+
+            beans.values().forEach(bean -> {
+                if (bean instanceof EventListener<?> listener) {
+                    publisher.registerListener(listener);
+                    System.out.println("[EVENT] Registered listener: " + bean.getClass().getSimpleName());
+                }
+            });
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize context", e);
         }
@@ -62,12 +78,18 @@ public class ApplicationContext {
             throw new RuntimeException("Package not found: " + basePackage);
         }
 
-        File directory = new File(resource.toURI());
+        File baseDir = new File(resource.toURI());
+        scanDirectoryRecursive(baseDir, basePackage);
+    }
+
+    private void scanDirectoryRecursive(File directory, String packageName) throws Exception {
         for (File file : Objects.requireNonNull(directory.listFiles())) {
-            if (file.getName().endsWith(".class")) {
-                String className = basePackage + "." + file.getName().replace(".class", "");
+            if (file.isDirectory()) {
+                scanDirectoryRecursive(file, packageName + "." + file.getName());
+            } else if (file.getName().endsWith(".class")) {
+                String className = packageName + "." + file.getName().replace(".class", "");
                 Class<?> clazz = Class.forName(className);
-                if (clazz.isAnnotationPresent(Component.class)) {
+                if (clazz.isAnnotationPresent(org.myprojecticaro.annotations.Component.class)) {
                     Object instance = clazz.getDeclaredConstructor().newInstance();
                     beans.put(clazz, instance);
                     System.out.println("[SCAN] Registered: " + clazz.getSimpleName());
