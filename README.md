@@ -1,21 +1,22 @@
 # 🧪 POC-Spring-Under-Hood
 
-This project is a Proof of Concept (POC) that recreates some of the core features of the **Spring Framework** and **Spring Boot**, in a simplified form.  
-It aims to provide a **deep dive** into how Spring works under the hood.
+This project is a **Proof of Concept** that reimplements the core functionality of the **Spring Framework** and **Spring Boot**, focusing on internal mechanisms like IoC, dependency injection, component scanning, auto-configuration, and event publishing.
+
+It provides a step-by-step way to understand **how Spring works behind the scenes** — by rebuilding it from scratch.
 
 ---
 
 ## 🎯 Purpose
 
-To demonstrate the internal mechanics of:
+To simulate and explore how the Spring ecosystem works by implementing:
 
-- Inversion of Control (IoC)
-- Dependency Injection using `@Autowired`
-- Component scanning (`@ComponentScan`)
-- Bean registration via `@Component`
-- AutoConfiguration similar to Spring Boot's `@EnableAutoConfiguration`
-- Configuration loading from `.factories` files
-- Manual context lifecycle and initialization
+- ✅ Inversion of Control (IoC)
+- ✅ Dependency Injection using `@Autowired`
+- ✅ Component Scanning via `@Component`
+- ✅ AutoConfiguration via `.factories` file
+- ✅ Event Publishing system (`EventPublisher` and `EventListener`)
+- ✅ Reflection-based bean management
+- ✅ Manual bean lifecycle control
 
 ---
 
@@ -25,18 +26,23 @@ To demonstrate the internal mechanics of:
 src/
 ├── main/
 │   ├── java/
-│   │   └── org/
-│   │       └── myprojecticaro/
-│   │           ├── annotations/
-│   │           │   ├── Autowired.java
-│   │           │   ├── Component.java
-│   │           │   └── AutoConfiguration.java
-│   │           ├── context/
-│   │           │   └── ApplicationContext.java
-│   │           ├── service/
-│   │           │   ├── MessageService.java
-│   │           │   └── GreetingService.java
-│   │           └── Application.java
+│   │   └── org/myprojecticaro/
+│   │       ├── annotations/
+│   │       │   ├── Autowired.java
+│   │       │   ├── Component.java
+│   │       │   └── AutoConfiguration.java
+│   │       ├── context/
+│   │       │   └── ApplicationContext.java
+│   │       ├── events/
+│   │       │   ├── EventPublisher.java
+│   │       │   ├── EventListener.java
+│   │       │   ├── UserRegisteredEvent.java
+│   │       │   └── WelcomeEmailListener.java
+│   │       ├── service/
+│   │       │   ├── MessageService.java
+│   │       │   ├── GreetingService.java
+│   │       │   └── RegistrationService.java
+│   │       └── Application.java
 │   └── resources/
 │       └── autoconfiguration.factories
 ```
@@ -45,70 +51,85 @@ src/
 
 ## 🛠️ Implemented Features
 
-| Feature                           | Description                                                            |
-|----------------------------------|------------------------------------------------------------------------|
-| IoC Container                    | Custom `ApplicationContext` implementation                            |
-| Custom Annotations               | `@Component`, `@Autowired`, `@AutoConfiguration`                       |
-| Dependency Injection             | Field-based injection using reflection and `@Autowired`               |
-| Component Scanning               | Scans classes with `.class` extension for `@Component` annotation     |
-| AutoConfiguration                | Based on `.factories` file and `@Component`-annotated classes         |
-| Bean Registry                    | Beans stored in a `Map<Class<?>, Object>`                             |
-| Manual Context Initialization    | Custom entry point via `Application.java`                             |
+| Feature                         | Description                                                            |
+|--------------------------------|------------------------------------------------------------------------|
+| IoC Container                  | Custom `ApplicationContext` that manages bean lifecycle                |
+| Dependency Injection           | Injects fields annotated with `@Autowired` using reflection             |
+| Component Scanning             | Detects and registers `@Component` classes                             |
+| AutoConfiguration              | Registers beans via `.factories` config + `@Component` classes         |
+| Event System                   | Publishes and listens to events using `EventPublisher`/`EventListener` |
+| Annotation-based Metadata      | Implements `@Component`, `@Autowired`, and `@AutoConfiguration`        |
 
 ---
 
 ## 🔍 How It Works
 
-### 1. `ApplicationContext`
+### `ApplicationContext.java`
 
-When initialized with a base package:
+This is the core of the custom framework. It:
 
-- Scans `.class` files in that package
-- Looks for classes annotated with `@Component`
-- Instantiates and registers them using reflection
-- Loads classes from `autoconfiguration.factories`
-- Injects all fields annotated with `@Autowired`
+1. **Scans the base package** for `@Component` classes.
+2. **Loads auto-configured classes** from `autoconfiguration.factories`.
+3. **Instantiates beans using reflection**.
+4. **Performs field-level injection** via `@Autowired`.
+5. **Registers event listeners** and supports event publishing.
 
 ---
 
-### 2. AutoConfiguration
+### AutoConfiguration
 
-You can register components automatically via:
+You can auto-load beans using this file:
 
-```
-src/main/resources/autoconfiguration.factories
-```
-
-Example:
 ```properties
+# src/main/resources/autoconfiguration.factories
 org.myprojecticaro.autoconfigure.EnableAutoConfiguration=\
 org.myprojecticaro.service.MessageService
 ```
 
 ---
 
-## ▶️ How to Run
+### Event System
 
-1. Compile and run `Application.java`:
+- **Publishers** fire events (e.g., `UserRegisteredEvent`)
+- **Listeners** receive and process the events
 
-```bash
-./gradlew run  # or run from your IDE
-```
-
-2. Expected output:
-
-```
-[SCAN] Registered: GreetingService
-[AUTO-CONFIG] Registered: MessageService
-[INJECT] Injected MessageService into GreetingService
-Hello from MessageService!
+Example:
+```java
+eventPublisher.publish(new UserRegisteredEvent("icaro.dev"));
 ```
 
 ---
 
-## ✨ Examples
+## ▶️ How to Run
 
-### MessageService.java
+1. Run the main class:
+
+```bash
+./gradlew run
+```
+
+2. Example output:
+
+```
+[SCAN] Registered: EventPublisher
+[SCAN] Registered: WelcomeEmailListener
+[SCAN] Registered: GreetingService
+[SCAN] Registered: MessageService
+[SCAN] Registered: RegistrationService
+[AUTO-CONFIG] Registered: MessageService
+[INJECT] Injected MessageService into GreetingService
+[INJECT] Injected EventPublisher into RegistrationService
+[EVENT] Registered listener: WelcomeEmailListener
+Hello from MessageService!
+[REGISTER] User created: icaro.dev
+[EVENT] Sending welcome email to: icaro.dev
+```
+
+---
+
+## ✨ Example: Custom Services
+
+### `MessageService.java`
 
 ```java
 @Component
@@ -120,42 +141,55 @@ public class MessageService {
 }
 ```
 
-### GreetingService.java
+### `RegistrationService.java`
 
 ```java
 @Component
-public class GreetingService {
+public class RegistrationService {
     @Autowired
-    private MessageService messageService;
+    private EventPublisher eventPublisher;
 
-    public void greet() {
-        messageService.hello();
+    public void register(String username) {
+        System.out.println("[REGISTER] User created: " + username);
+        eventPublisher.publish(new UserRegisteredEvent(username));
+    }
+}
+```
+
+### `WelcomeEmailListener.java`
+
+```java
+@Component
+public class WelcomeEmailListener implements EventListener<UserRegisteredEvent> {
+    @Override
+    public void onEvent(UserRegisteredEvent event) {
+        System.out.println("[EVENT] Sending welcome email to: " + event.getUsername());
     }
 }
 ```
 
 ---
 
-## 🚧 Future Improvements
+## 🚧 Roadmap & Improvements
 
 | Feature                   | Status    |
 |---------------------------|-----------|
-| `@Value` and config files | ⏳ Planned |
 | `@PostConstruct` support  | ⏳ Planned |
+| Config properties / `@Value` | ⏳ Planned |
+| Bean lifecycle callbacks  | ⏳ Planned |
+| Prototype scope support   | ❌ Not yet |
 | Embedded HTTP server      | ❌ Not yet |
-| Bean scopes (singleton)   | ❌ Not yet |
-| Event system              | ❌ Not yet |
 
 ---
 
 ## 👨‍💻 Author
 
 **Ícaro Caetano**  
-Learning the internals of Spring by building it from scratch.  
-Contact: [LinkedIn](https://www.linkedin.com/in/icarocaetano)
+Exploring Spring’s internals through hands-on implementation.  
+📫 [LinkedIn →](https://www.linkedin.com/in/icarocaetano)
 
 ---
 
 ## 📜 License
 
-This project is free to use for educational and learning purposes.
+This project is open-source and intended for learning and educational purposes.
