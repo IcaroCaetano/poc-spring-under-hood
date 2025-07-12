@@ -67,8 +67,8 @@ public class ApplicationContext {
      * Scans the specified package for classes annotated with {@code @Component},
      * instantiates them via reflection, and registers them in the IoC container.
      *
-     * @param basePackage the base package to scan
-     * @throws Exception if any class loading or instantiation fails
+     * @param basePackage the base package to scan for component classes
+     * @throws Exception if any error occurs during class loading, instantiation, or scanning
      */
     private void scanPackage(String basePackage) throws Exception {
         String path = basePackage.replace(".", "/");
@@ -82,6 +82,14 @@ public class ApplicationContext {
         scanDirectoryRecursive(baseDir, basePackage);
     }
 
+    /**
+     * Recursively scans the given directory for class files, loading classes annotated with
+     * {@code @Component}, instantiating them, and registering them in the IoC container.
+     *
+     * @param directory the current directory to scan
+     * @param packageName the package name corresponding to the directory
+     * @throws Exception if any error occurs during class loading or instantiation
+     */
     private void scanDirectoryRecursive(File directory, String packageName) throws Exception {
         for (File file : Objects.requireNonNull(directory.listFiles())) {
             if (file.isDirectory()) {
