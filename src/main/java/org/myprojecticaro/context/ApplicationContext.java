@@ -3,6 +3,7 @@ package org.myprojecticaro.context;
 
 import org.myprojecticaro.annotations.Autowired;
 import org.myprojecticaro.annotations.Component;
+import org.myprojecticaro.annotations.PostConstruct;
 import org.myprojecticaro.events.EventPublisher;
 import org.myprojecticaro.events.EventListener;
 
@@ -45,6 +46,7 @@ public class ApplicationContext {
             scanPackage(basePackage);
             loadAutoConfigurations();
             injectDependencies();
+            invokePostConstructMethods();
 
             EventPublisher publisher = (EventPublisher) beans.get(EventPublisher.class);
             if (publisher == null) {
@@ -162,6 +164,18 @@ public class ApplicationContext {
                     } else {
                         throw new RuntimeException("No bean found for type: " + dependencyType.getName());
                     }
+                }
+            }
+        }
+    }
+
+    private void invokePostConstructMethods() throws Exception {
+        for (Object bean : beans.values()) {
+            for (var method : bean.getClass().getDeclaredMethods()) {
+                if (method.isAnnotationPresent(PostConstruct.class)) {
+                    method.setAccessible(true);
+                    method.invoke(bean);
+                    System.out.println("[POST-CONSTRUCT] Invoked " + method.getName() + " on " + bean.getClass().getSimpleName());
                 }
             }
         }
