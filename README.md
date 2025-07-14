@@ -17,6 +17,7 @@ To simulate and explore how the Spring ecosystem works by implementing:
 - ✅ Event Publishing system (`EventPublisher` and `EventListener`)
 - ✅ Reflection-based bean management
 - ✅ Manual bean lifecycle control
+- ✅ Lifecycle hooks via `@PostConstruct`
 
 ---
 
@@ -38,6 +39,8 @@ src/
 │   │       │   ├── EventListener.java
 │   │       │   ├── UserRegisteredEvent.java
 │   │       │   └── WelcomeEmailListener.java
+│   │       ├── lifecycle/
+│   │       │   └── InitializationService.java
 │   │       ├── service/
 │   │       │   ├── MessageService.java
 │   │       │   ├── GreetingService.java
@@ -51,14 +54,15 @@ src/
 
 ## 🛠️ Implemented Features
 
-| Feature                         | Description                                                            |
+| Feature                         | Description                                                           |
 |--------------------------------|------------------------------------------------------------------------|
 | IoC Container                  | Custom `ApplicationContext` that manages bean lifecycle                |
-| Dependency Injection           | Injects fields annotated with `@Autowired` using reflection             |
+| Dependency Injection           | Injects fields annotated with `@Autowired` using reflection            |
 | Component Scanning             | Detects and registers `@Component` classes                             |
 | AutoConfiguration              | Registers beans via `.factories` config + `@Component` classes         |
 | Event System                   | Publishes and listens to events using `EventPublisher`/`EventListener` |
 | Annotation-based Metadata      | Implements `@Component`, `@Autowired`, and `@AutoConfiguration`        |
+| Lifecycle Hook                   | `@PostConstruct` support for bean initialization logic               |
 
 ---
 
@@ -73,6 +77,7 @@ This is the core of the custom framework. It:
 3. **Instantiates beans using reflection**.
 4. **Performs field-level injection** via `@Autowired`.
 5. **Registers event listeners** and supports event publishing.
+6. **Calls methods annotated with `@PostConstruct`**
 
 ---
 
@@ -119,6 +124,9 @@ eventPublisher.publish(new UserRegisteredEvent("icaro.dev"));
 [AUTO-CONFIG] Registered: MessageService
 [INJECT] Injected MessageService into GreetingService
 [INJECT] Injected EventPublisher into RegistrationService
+[INJECT] Injected ...
+[POST-CONSTRUCT] Called init on InitializationService
+[INIT] InitializationService is ready!
 [EVENT] Registered listener: WelcomeEmailListener
 Hello from MessageService!
 [REGISTER] User created: icaro.dev
@@ -174,7 +182,6 @@ public class WelcomeEmailListener implements EventListener<UserRegisteredEvent> 
 
 | Feature                   | Status    |
 |---------------------------|-----------|
-| `@PostConstruct` support  | ⏳ Planned |
 | Config properties / `@Value` | ⏳ Planned |
 | Bean lifecycle callbacks  | ⏳ Planned |
 | Prototype scope support   | ❌ Not yet |
