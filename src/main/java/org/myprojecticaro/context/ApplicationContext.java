@@ -4,6 +4,7 @@ package org.myprojecticaro.context;
 import org.myprojecticaro.annotations.Autowired;
 import org.myprojecticaro.annotations.Component;
 import org.myprojecticaro.annotations.PostConstruct;
+import org.myprojecticaro.annotations.Qualifier;
 import org.myprojecticaro.events.EventPublisher;
 import org.myprojecticaro.events.EventListener;
 
@@ -156,11 +157,29 @@ public class ApplicationContext {
             for (var field : bean.getClass().getDeclaredFields()) {
                 if (field.isAnnotationPresent(Autowired.class)) {
                     Class<?> dependencyType = field.getType();
-                    Object dependency = beans.get(dependencyType);
+                    Object dependency = null;
+
+                    if (field.isAnnotationPresent(Qualifier.class)) {
+                        String qualifierName = field.getAnnotation(Qualifier.class).value();
+                        dependency = beans.entrySet().stream()
+                                .filter(entry -> dependencyType.isAssignableFrom(entry.getKey()))
+                                .filter(entry -> qualifierName.equals(getComponentName(entry.getKey())))
+                                .map(Map.Entry::getValue)
+                                .findFirst()
+                                .orElse(null);
+                    } else {
+                        dependency = beans.entrySet().stream()
+                                .filter(entry -> dependencyType.isAssignableFrom(entry.getKey()))
+                                .map(Map.Entry::getValue)
+                                .findFirst()
+                                .orElse(null);
+                    }
+
                     if (dependency != null) {
                         field.setAccessible(true);
                         field.set(bean, dependency);
-                        System.out.println("[INJECT] Injected " + dependencyType.getSimpleName() + " into " + bean.getClass().getSimpleName());
+                        System.out.println("[INJECT] Injected " + dependency.getClass().getSimpleName() +
+                                " into " + bean.getClass().getSimpleName());
                     } else {
                         throw new RuntimeException("No bean found for type: " + dependencyType.getName());
                     }
@@ -183,5 +202,15 @@ public class ApplicationContext {
 
     public <T> T getBean(Class<T> clazz) {
         return clazz.cast(beans.get(clazz));
+    }
+
+    private String getComponentName(Class<?> clazz) {
+        Component annotation = clazz.getAnnotation(Component.class);
+        if (annotation != null) {
+            return annotation.value().isEmpty()
+                    ? clazz.getSimpleName().substring(0,1).toLowerCase() + clazz.getSimpleName().substring(1)
+                    : annotation.value();
+        }
+        return null;
     }
 }

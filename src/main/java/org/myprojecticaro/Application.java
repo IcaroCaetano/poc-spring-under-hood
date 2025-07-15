@@ -3,6 +3,7 @@ package org.myprojecticaro;
 
 import org.myprojecticaro.context.ApplicationContext;
 import org.myprojecticaro.service.MessageService;
+import org.myprojecticaro.service.NotificationService;
 import org.myprojecticaro.service.RegistrationService;
 
 public class Application {
@@ -15,5 +16,8 @@ public class Application {
 
         RegistrationService registration = context.getBean(RegistrationService.class);
         registration.register("icaro.dev");
+
+        NotificationService notification = context.getBean(NotificationService.class);
+        notification.notifyUser("icaro.dev");
     }
 }
