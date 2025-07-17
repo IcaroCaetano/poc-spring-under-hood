@@ -1,10 +1,7 @@
 package org.myprojecticaro.context;
 
 
-import org.myprojecticaro.annotations.Autowired;
-import org.myprojecticaro.annotations.Component;
-import org.myprojecticaro.annotations.PostConstruct;
-import org.myprojecticaro.annotations.Qualifier;
+import org.myprojecticaro.annotations.*;
 import org.myprojecticaro.events.EventPublisher;
 import org.myprojecticaro.events.EventListener;
 
@@ -30,6 +27,7 @@ import java.util.*;
 public class ApplicationContext {
 
     private final Map<Class<?>, Object> beans = new HashMap<>();
+    private final Properties properties = new Properties();
 
     /**
      * Initializes the application context:
@@ -46,6 +44,7 @@ public class ApplicationContext {
         try {
             scanPackage(basePackage);
             loadAutoConfigurations();
+            loadProperties();
             injectDependencies();
             invokePostConstructMethods();
 
@@ -155,6 +154,20 @@ public class ApplicationContext {
     private void injectDependencies() throws IllegalAccessException {
         for (Object bean : beans.values()) {
             for (var field : bean.getClass().getDeclaredFields()) {
+                if (field.isAnnotationPresent(Value.class)) {
+                    String key = field.getAnnotation(Value.class).value();
+                    String value = properties.getProperty(key);
+                    System.out.println("[DEBUG] Property key: " + key + " → value: " + value);
+                    if (value != null) {
+                        field.setAccessible(true);
+                        Object casted = castValue(field.getType(), value);
+                        field.set(bean, casted);
+                        System.out.println("[VALUE] Injected property " + key + "=" + value);
+                    } else {
+                        throw new RuntimeException("Missing property: " + key);
+                    }
+                }
+
                 if (field.isAnnotationPresent(Autowired.class)) {
                     Class<?> dependencyType = field.getType();
                     Object dependency = null;
@@ -200,6 +213,18 @@ public class ApplicationContext {
         }
     }
 
+    private void loadProperties() {
+        try (InputStream input = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream("application.properties")) {
+            if (input != null) {
+                properties.load(input);
+                System.out.println("[PROPERTIES] Loaded application.properties");
+            }
+        } catch (Exception e) {
+            System.out.println("[PROPERTIES] Could not load application.properties");
+        }
+    }
+
     public <T> T getBean(Class<T> clazz) {
         return clazz.cast(beans.get(clazz));
     }
@@ -212,5 +237,13 @@ public class ApplicationContext {
                     : annotation.value();
         }
         return null;
+    }
+
+    private Object castValue(Class<?> type, String value) {
+        if (type == String.class) return value;
+        if (type == int.class || type == Integer.class) return Integer.parseInt(value);
+        if (type == boolean.class || type == Boolean.class) return Boolean.parseBoolean(value);
+        if (type == double.class || type == Double.class) return Double.parseDouble(value);
+        throw new IllegalArgumentException("Unsupported type for @Value: " + type.getName());
     }
 }
