@@ -18,6 +18,7 @@ To simulate and explore how the Spring ecosystem works by implementing:
 - ✅ Reflection-based bean management
 - ✅ Manual bean lifecycle control
 - ✅ Lifecycle hooks via `@PostConstruct`
+- ✅ Bean qualification using `@Qualifier`
 
 ---
 
@@ -31,6 +32,7 @@ src/
 │   │       ├── annotations/
 │   │       │   ├── Autowired.java
 │   │       │   ├── Component.java
+│   │       │   ├── Qualifier.java
 │   │       │   └── AutoConfiguration.java
 │   │       ├── context/
 │   │       │   └── ApplicationContext.java
@@ -44,6 +46,9 @@ src/
 │   │       ├── service/
 │   │       │   ├── MessageService.java
 │   │       │   ├── GreetingService.java
+│   │       │   ├── SmsMessageService.java
+│   │       │   ├── EmailMessageService.java
+│   │       │   ├── NotificationService.java
 │   │       │   └── RegistrationService.java
 │   │       └── Application.java
 │   └── resources/
@@ -63,6 +68,7 @@ src/
 | Event System                   | Publishes and listens to events using `EventPublisher`/`EventListener` |
 | Annotation-based Metadata      | Implements `@Component`, `@Autowired`, and `@AutoConfiguration`        |
 | Lifecycle Hook                   | `@PostConstruct` support for bean initialization logic               |
+| Bean Qualifier Support         | `@Qualifier("name")` allows injection of specific implementations      |
 
 ---
 
@@ -172,6 +178,36 @@ public class WelcomeEmailListener implements EventListener<UserRegisteredEvent> 
     @Override
     public void onEvent(UserRegisteredEvent event) {
         System.out.println("[EVENT] Sending welcome email to: " + event.getUsername());
+    }
+}
+```
+
+### Qualifier Example
+```java
+@Component
+@Qualifier("sms")
+public class SmsMessageService implements MessageService {
+    public void send(String to, String msg) {
+        System.out.println("SMS to " + to + ": " + msg);
+    }
+}
+
+@Component
+@Qualifier("email")
+public class EmailMessageService implements MessageService {
+    public void send(String to, String msg) {
+        System.out.println("Email to " + to + ": " + msg);
+    }
+}
+
+@Component
+public class NotificationService {
+    @Autowired
+    @Qualifier("sms")
+    private MessageService messageService;
+
+    public void notifyUser(String username) {
+        messageService.send(username, "Welcome!");
     }
 }
 ```
