@@ -19,6 +19,8 @@ To simulate and explore how the Spring ecosystem works by implementing:
 - ✅ Manual bean lifecycle control
 - ✅ Lifecycle hooks via `@PostConstruct`
 - ✅ Bean qualification using `@Qualifier`
+- ✅ Configuration property injection via @Value
+
 
 ---
 
@@ -33,6 +35,7 @@ src/
 │   │       │   ├── Autowired.java
 │   │       │   ├── Component.java
 │   │       │   ├── Qualifier.java
+│   │       │   ├── Value.java
 │   │       │   └── AutoConfiguration.java
 │   │       ├── context/
 │   │       │   └── ApplicationContext.java
@@ -44,31 +47,34 @@ src/
 │   │       ├── lifecycle/
 │   │       │   └── InitializationService.java
 │   │       ├── service/
-│   │       │   ├── MessageService.java
-│   │       │   ├── GreetingService.java
-│   │       │   ├── SmsMessageService.java
+│   │       │   ├── ConfigPrinterService.java
 │   │       │   ├── EmailMessageService.java
+│   │       │   ├── GreetingService.java
+│   │       │   ├── MessageService.java
 │   │       │   ├── NotificationService.java
-│   │       │   └── RegistrationService.java
+│   │       │   ├── RegistrationService.java
+│   │       │   └── SmsMessageService.java
 │   │       └── Application.java
 │   └── resources/
-│       └── autoconfiguration.factories
+│       ├── autoconfiguration.factories
+│       └── application.properties
 ```
 
 ---
 
 ## 🛠️ Implemented Features
 
-| Feature                         | Description                                                           |
-|--------------------------------|------------------------------------------------------------------------|
-| IoC Container                  | Custom `ApplicationContext` that manages bean lifecycle                |
-| Dependency Injection           | Injects fields annotated with `@Autowired` using reflection            |
-| Component Scanning             | Detects and registers `@Component` classes                             |
-| AutoConfiguration              | Registers beans via `.factories` config + `@Component` classes         |
-| Event System                   | Publishes and listens to events using `EventPublisher`/`EventListener` |
-| Annotation-based Metadata      | Implements `@Component`, `@Autowired`, and `@AutoConfiguration`        |
-| Lifecycle Hook                   | `@PostConstruct` support for bean initialization logic               |
-| Bean Qualifier Support         | `@Qualifier("name")` allows injection of specific implementations      |
+| Feature                         | Description                                                                |
+|---------------------------------|----------------------------------------------------------------------------|
+| IoC Container                   | Custom `ApplicationContext` that manages bean lifecycle                    |
+| Dependency Injection            | Injects fields annotated with `@Autowired` using reflection                |
+| Component Scanning              | Detects and registers `@Component` classes                                 |
+| AutoConfiguration               | Registers beans via `.factories` config + `@Component` classes             |
+| Event System                    | Publishes and listens to events using `EventPublisher`/`EventListener`     |
+| Annotation-based Metadata       | Implements `@Component`, `@Autowired`, and `@AutoConfiguration`            |
+| Lifecycle Hook                  | `@PostConstruct` support for bean initialization logic                     |
+| Bean Qualifier Support          | `@Qualifier("name")` allows injection of specific implementations          |
+| Configuration Properties	       | Injects values from application.properties using @Value                    | 
 
 ---
 
@@ -78,12 +84,21 @@ src/
 
 This is the core of the custom framework. It:
 
-1. **Scans the base package** for `@Component` classes.
-2. **Loads auto-configured classes** from `autoconfiguration.factories`.
-3. **Instantiates beans using reflection**.
-4. **Performs field-level injection** via `@Autowired`.
-5. **Registers event listeners** and supports event publishing.
-6. **Calls methods annotated with `@PostConstruct`**
+1. Scans the base package for @Component classes
+
+2. Loads auto-configured classes from autoconfiguration.factories
+
+3. Instantiates beans using reflection
+
+4. Performs field-level injection via @Autowired
+
+5. Resolves @Qualifier when multiple implementations exist
+
+6. Resolves @Value from application.properties
+
+7. Calls methods annotated with @PostConstruct
+
+8. Registers event listeners for custom events
 
 ---
 
