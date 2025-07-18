@@ -29,6 +29,9 @@ public class ApplicationContext {
     private final Map<Class<?>, Object> beans = new HashMap<>();
     private final Properties properties = new Properties();
 
+    private final Map<Class<?>, Object> singletonBeans = new HashMap<>();
+    private final Set<Class<?>> prototypeBeans = new HashSet<>();
+
     /**
      * Initializes the application context:
      * <ol>
@@ -44,11 +47,12 @@ public class ApplicationContext {
         try {
             scanPackage(basePackage);
             loadAutoConfigurations();
+            beans.putAll(singletonBeans);
             loadProperties();
             injectDependencies();
             invokePostConstructMethods();
 
-            EventPublisher publisher = (EventPublisher) beans.get(EventPublisher.class);
+            EventPublisher publisher = (EventPublisher) singletonBeans.get(EventPublisher.class);
             if (publisher == null) {
                 throw new RuntimeException("EventPublisher not found in context.");
             }
@@ -99,10 +103,18 @@ public class ApplicationContext {
             } else if (file.getName().endsWith(".class")) {
                 String className = packageName + "." + file.getName().replace(".class", "");
                 Class<?> clazz = Class.forName(className);
-                if (clazz.isAnnotationPresent(org.myprojecticaro.annotations.Component.class)) {
-                    Object instance = clazz.getDeclaredConstructor().newInstance();
-                    beans.put(clazz, instance);
-                    System.out.println("[SCAN] Registered: " + clazz.getSimpleName());
+                if (clazz.isAnnotationPresent(Component.class)) {
+                    Scope scope = clazz.getAnnotation(Scope.class);
+                    String scopeValue = scope != null ? scope.value() : "singleton";
+
+                    if ("prototype".equalsIgnoreCase(scopeValue)) {
+                        prototypeBeans.add(clazz);
+                        System.out.println("[SCAN] Registered prototype: " + clazz.getSimpleName());
+                    } else {
+                        Object instance = clazz.getDeclaredConstructor().newInstance();
+                        singletonBeans.put(clazz, instance);
+                        System.out.println("[SCAN] Registered singleton: " + clazz.getSimpleName());
+                    }
                 }
             }
         }
@@ -152,7 +164,7 @@ public class ApplicationContext {
      * @throws IllegalAccessException if a field cannot be set
      */
     private void injectDependencies() throws IllegalAccessException {
-        for (Object bean : beans.values()) {
+        for (Object bean : singletonBeans.values()) {
             for (var field : bean.getClass().getDeclaredFields()) {
                 if (field.isAnnotationPresent(Value.class)) {
                     String key = field.getAnnotation(Value.class).value();
@@ -202,7 +214,7 @@ public class ApplicationContext {
     }
 
     private void invokePostConstructMethods() throws Exception {
-        for (Object bean : beans.values()) {
+        for (Object bean : singletonBeans.values()) {
             for (var method : bean.getClass().getDeclaredMethods()) {
                 if (method.isAnnotationPresent(PostConstruct.class)) {
                     method.setAccessible(true);
@@ -226,7 +238,17 @@ public class ApplicationContext {
     }
 
     public <T> T getBean(Class<T> clazz) {
-        return clazz.cast(beans.get(clazz));
+        if (prototypeBeans.contains(clazz)) {
+            try {
+                T instance = clazz.getDeclaredConstructor().newInstance();
+                injectInto(instance); // injeta dependências também
+                postConstruct(instance);
+                return instance;
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to create prototype bean: " + clazz, e);
+            }
+        }
+        return clazz.cast(singletonBeans.get(clazz));
     }
 
     private String getComponentName(Class<?> clazz) {
@@ -245,5 +267,36 @@ public class ApplicationContext {
         if (type == boolean.class || type == Boolean.class) return Boolean.parseBoolean(value);
         if (type == double.class || type == Double.class) return Double.parseDouble(value);
         throw new IllegalArgumentException("Unsupported type for @Value: " + type.getName());
+    }
+
+    private void injectInto(Object instance) throws IllegalAccessException {
+        for (var field : instance.getClass().getDeclaredFields()) {
+            if (field.isAnnotationPresent(Autowired.class)) {
+                Class<?> dependencyType = field.getType();
+                Object dependency = singletonBeans.get(dependencyType);
+
+                if (dependency != null) {
+                    field.setAccessible(true);
+                    field.set(instance, dependency);
+                    System.out.println("[INJECT] Injected " + dependencyType.getSimpleName() + " into " + instance.getClass().getSimpleName());
+                } else {
+                    throw new RuntimeException("No bean found for type: " + dependencyType.getName());
+                }
+            }
+        }
+    }
+
+    private void postConstruct(Object instance) {
+        for (var method : instance.getClass().getDeclaredMethods()) {
+            if (method.isAnnotationPresent(PostConstruct.class)) {
+                try {
+                    method.setAccessible(true);
+                    method.invoke(instance);
+                    System.out.println("[POST-CONSTRUCT] Invoked " + method.getName() + " on " + instance.getClass().getSimpleName());
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to invoke @PostConstruct on " + instance.getClass(), e);
+                }
+            }
+        }
     }
 }

@@ -1,6 +1,7 @@
 package org.myprojecticaro;
 
 
+import org.myprojecticaro.component.RequestScopedBean;
 import org.myprojecticaro.context.ApplicationContext;
 import org.myprojecticaro.service.MessageService;
 import org.myprojecticaro.service.NotificationService;
@@ -19,5 +20,10 @@ public class Application {
 
         NotificationService notification = context.getBean(NotificationService.class);
         notification.notifyUser("icaro.dev");
+
+        RequestScopedBean r1 = context.getBean(RequestScopedBean.class);
+        RequestScopedBean r2 = context.getBean(RequestScopedBean.class);
+
+        System.out.println(r1 == r2);
     }
 }
