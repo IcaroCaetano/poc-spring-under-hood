@@ -241,7 +241,7 @@ public class ApplicationContext {
         if (prototypeBeans.contains(clazz)) {
             try {
                 T instance = clazz.getDeclaredConstructor().newInstance();
-                injectInto(instance); // injeta dependências também
+                injectInto(instance);
                 postConstruct(instance);
                 return instance;
             } catch (Exception e) {
@@ -249,6 +249,10 @@ public class ApplicationContext {
             }
         }
         return clazz.cast(singletonBeans.get(clazz));
+    }
+
+    public void registerBean(Class<?> type, Object instance) {
+        beans.put(type, instance);
     }
 
     private String getComponentName(Class<?> clazz) {

@@ -2,6 +2,8 @@ package org.myprojecticaro;
 
 
 import org.myprojecticaro.component.RequestScopedBean;
+import org.myprojecticaro.component.SimpleFormatter;
+import org.myprojecticaro.config.AppConfig;
 import org.myprojecticaro.context.ApplicationContext;
 import org.myprojecticaro.service.MessageService;
 import org.myprojecticaro.service.NotificationService;
@@ -25,5 +27,9 @@ public class Application {
         RequestScopedBean r2 = context.getBean(RequestScopedBean.class);
 
         System.out.println(r1 == r2);
+
+        AppConfig config = new AppConfig();
+        SimpleFormatter simpleFormatter = config.simpleFormatter();
+        context.registerBean(SimpleFormatter.class, simpleFormatter);
     }
 }
