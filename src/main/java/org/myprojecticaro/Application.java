@@ -26,7 +26,7 @@ public class Application {
         RequestScopedBean r1 = context.getBean(RequestScopedBean.class);
         RequestScopedBean r2 = context.getBean(RequestScopedBean.class);
 
-        System.out.println(r1 == r2);
+        System.out.println("Same instance? " + (r1 == r2));
 
         AppConfig config = new AppConfig();
         SimpleFormatter simpleFormatter = config.simpleFormatter();

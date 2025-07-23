@@ -8,7 +8,7 @@ public class AppConfig {
 
     @Bean
     public SimpleFormatter simpleFormatter() {
-
+        System.out.println("[BEAN] Registered: " + SimpleFormatter.class.getSimpleName());
         return new SimpleFormatter();
     }
 }
