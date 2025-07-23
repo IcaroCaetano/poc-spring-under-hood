@@ -20,7 +20,7 @@ To simulate and explore how the Spring ecosystem works by implementing:
 - ✅ Lifecycle hooks via `@PostConstruct`
 - ✅ Bean qualification using `@Qualifier`
 - ✅ Configuration property injection via @Value
-
+- ✅ Manual bean registration via `@Bean` method
 
 ---
 
@@ -36,7 +36,14 @@ src/
 │   │       │   ├── Component.java
 │   │       │   ├── Qualifier.java
 │   │       │   ├── Value.java
+│   │       │   ├── Bean.java
+│   │       │   ├── PostConstructor.java
+│   │       │   ├── Scope.java
 │   │       │   └── AutoConfiguration.java
+│   │       ├── component/
+│   │       │   ├── AppLoggerService.java
+│   │       │   ├── RequestScopedBean.java
+│   │       │   └── SimpleFormatter.java
 │   │       ├── context/
 │   │       │   └── ApplicationContext.java
 │   │       ├── events/
@@ -44,6 +51,8 @@ src/
 │   │       │   ├── EventListener.java
 │   │       │   ├── UserRegisteredEvent.java
 │   │       │   └── WelcomeEmailListener.java
+│   │       ├── config/
+│   │       │   ├── AppConfig.java
 │   │       ├── lifecycle/
 │   │       │   └── InitializationService.java
 │   │       ├── service/
@@ -64,18 +73,18 @@ src/
 
 ## 🛠️ Implemented Features
 
-| Feature                         | Description                                                                |
-|---------------------------------|----------------------------------------------------------------------------|
-| IoC Container                   | Custom `ApplicationContext` that manages bean lifecycle                    |
-| Dependency Injection            | Injects fields annotated with `@Autowired` using reflection                |
-| Component Scanning              | Detects and registers `@Component` classes                                 |
-| AutoConfiguration               | Registers beans via `.factories` config + `@Component` classes             |
-| Event System                    | Publishes and listens to events using `EventPublisher`/`EventListener`     |
-| Annotation-based Metadata       | Implements `@Component`, `@Autowired`, and `@AutoConfiguration`            |
-| Lifecycle Hook                  | `@PostConstruct` support for bean initialization logic                     |
-| Bean Qualifier Support          | `@Qualifier("name")` allows injection of specific implementations          |
-| Configuration Properties	       | Injects values from application.properties using @Value                    | 
-
+| Feature                     | Description                                                                             |
+|-----------------------------|-----------------------------------------------------------------------------------------|
+| IoC Container               | Custom `ApplicationContext` that manages bean lifecycle                                 |
+| Dependency Injection        | Injects fields annotated with `@Autowired` using reflection                             |
+| Component Scanning          | Detects and registers `@Component` classes                                              |
+| AutoConfiguration           | Registers beans via `.factories` config + `@Component` classes                          |
+| Event System                | Publishes and listens to events using `EventPublisher`/`EventListener`                  |
+| Annotation-based Metadata   | Implements `@Component`, `@Autowired`, and `@AutoConfiguration`                         |
+| Lifecycle Hook              | `@PostConstruct` support for bean initialization logic                                  |
+| Bean Qualifier Support      | `@Qualifier("name")` allows injection of specific implementations                       |
+| Configuration Properties	   | Injects values from application.properties using @Value                                 |
+| Manual Bean Registration	   | Support for registering beans via methods annotated with @Bean in configuration classes |    
 ---
 
 ## 🔍 How It Works
@@ -152,6 +161,8 @@ eventPublisher.publish(new UserRegisteredEvent("icaro.dev"));
 Hello from MessageService!
 [REGISTER] User created: icaro.dev
 [EVENT] Sending welcome email to: icaro.dev
+[BEAN] Registered: SimpleFormatter
+[LOG] [Formatted] This is a log message
 ```
 
 ---
