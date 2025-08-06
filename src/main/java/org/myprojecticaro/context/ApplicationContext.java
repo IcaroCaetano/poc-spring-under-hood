@@ -303,4 +303,20 @@ public class ApplicationContext {
             }
         }
     }
+
+    public void close() {
+        for (Object bean : singletonBeans.values()) {
+            for (var method : bean.getClass().getDeclaredMethods()) {
+                if (method.isAnnotationPresent(PreDestroy.class)) {
+                    try {
+                        method.setAccessible(true);
+                        method.invoke(bean);
+                        System.out.println("[PRE-DESTROY] Invoked " + method.getName() + " on " + bean.getClass().getSimpleName());
+                    } catch (Exception e) {
+                        System.err.println("Failed to invoke @PreDestroy on " + bean.getClass().getSimpleName() + ": " + e.getMessage());
+                    }
+                }
+            }
+        }
+    }
 }

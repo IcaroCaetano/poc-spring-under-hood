@@ -31,5 +31,7 @@ public class Application {
         AppConfig config = new AppConfig();
         SimpleFormatter simpleFormatter = config.simpleFormatter();
         context.registerBean(SimpleFormatter.class, simpleFormatter);
+
+        context.close();
     }
 }
