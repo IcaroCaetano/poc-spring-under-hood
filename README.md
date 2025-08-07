@@ -17,7 +17,7 @@ To simulate and explore how the Spring ecosystem works by implementing:
 - ✅ Event Publishing system (`EventPublisher` and `EventListener`)
 - ✅ Reflection-based bean management
 - ✅ Manual bean lifecycle control
-- ✅ Lifecycle hooks via `@PostConstruct`
+- ✅ Lifecycle hooks via `@PostConstruct` and `@PreDestroy`
 - ✅ Bean qualification using `@Qualifier`
 - ✅ Configuration property injection via @Value
 - ✅ Manual bean registration via `@Bean` method
@@ -36,6 +36,7 @@ src/
 │   │       │   ├── Component.java
 │   │       │   ├── Qualifier.java
 │   │       │   ├── Value.java
+│   │       │   ├── PreDestroy.java
 │   │       │   ├── Bean.java
 │   │       │   ├── PostConstructor.java
 │   │       │   ├── Scope.java
@@ -81,7 +82,7 @@ src/
 | AutoConfiguration           | Registers beans via `.factories` config + `@Component` classes                          |
 | Event System                | Publishes and listens to events using `EventPublisher`/`EventListener`                  |
 | Annotation-based Metadata   | Implements `@Component`, `@Autowired`, and `@AutoConfiguration`                         |
-| Lifecycle Hook              | `@PostConstruct` support for bean initialization logic                                  |
+| Lifecycle Hook              | Supports both `@PostConstruct` for initialization and `@PreDestroy for shutdown logic`  |                                |
 | Bean Qualifier Support      | `@Qualifier("name")` allows injection of specific implementations                       |
 | Configuration Properties	   | Injects values from application.properties using @Value                                 |
 | Manual Bean Registration	   | Support for registering beans via methods annotated with @Bean in configuration classes |    
@@ -108,6 +109,8 @@ This is the core of the custom framework. It:
 7. Calls methods annotated with @PostConstruct
 
 8. Registers event listeners for custom events
+
+9. Invokes @PreDestroy methods during shutdown for cleanup
 
 ---
 
@@ -156,13 +159,15 @@ eventPublisher.publish(new UserRegisteredEvent("icaro.dev"));
 [INJECT] Injected EventPublisher into RegistrationService
 [INJECT] Injected ...
 [POST-CONSTRUCT] Called init on InitializationService
-[INIT] InitializationService is ready!
+[POST-CONSTRUCT - INIT] InitializationService is ready!
 [EVENT] Registered listener: WelcomeEmailListener
 Hello from MessageService!
 [REGISTER] User created: icaro.dev
 [EVENT] Sending welcome email to: icaro.dev
 [BEAN] Registered: SimpleFormatter
 [LOG] [Formatted] This is a log message
+[PRE-DESTROY] InitializationService is shutting down!
+[PRE-DESTROY] Invoked shutdown on InitializationService
 ```
 
 ---

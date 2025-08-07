@@ -9,7 +9,7 @@ public class InitializationService {
 
     @PostConstruct
     public void init() {
-        System.out.println("[INIT] InitializationService is ready!");
+        System.out.println("[POST-CONSTRUCTOR - INIT] InitializationService is ready!");
     }
 
     @PreDestroy
